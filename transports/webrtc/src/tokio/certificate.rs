@@ -19,6 +19,7 @@
 // DEALINGS IN THE SOFTWARE.
 
 use rand::{distributions::DistString, CryptoRng, Rng};
+use rcgen::KeyPair;
 use webrtc::peer_connection::certificate::RTCCertificate;
 
 use crate::tokio::fingerprint::Fingerprint;
@@ -39,10 +40,12 @@ impl Certificate {
     {
         let mut params = rcgen::CertificateParams::new(vec![
             rand::distributions::Alphanumeric.sample_string(&mut rand::thread_rng(), 16)
-        ]);
-        params.alg = &rcgen::PKCS_ECDSA_P256_SHA256;
+        ]).map_err(
+            |e| Error(Kind::InvalidPEM(webrtc::Error::new(e.to_string())))
+        )?;
+        //params.alg = &rcgen::PKCS_ECDSA_P256_SHA256;
         Ok(Self {
-            inner: RTCCertificate::from_params(params).expect("default params to work"),
+            inner: RTCCertificate::from_key_pair(KeyPair::generate().unwrap()).expect("default params to work"),
         })
     }
 
